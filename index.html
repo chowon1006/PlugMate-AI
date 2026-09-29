@@ -1,0 +1,2428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PlugMate AI | 해외 콘센트 AI 분류</title>
+
+    <!-- Teachable Machine -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: Arial, "Noto Sans KR", sans-serif;
+            color: #0d2149;
+            background: #ffffff;
+            line-height: 1.65;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        img {
+            max-width: 100%;
+        }
+
+        :root {
+            --navy: #0d2149;
+            --blue: #246ee9;
+            --cyan: #0ba5c7;
+            --light-blue: #eef6ff;
+            --soft-blue: #f5f9fe;
+            --border: #dbe5f1;
+            --muted: #70809b;
+            --green: #12a878;
+            --yellow: #fff8df;
+            --red: #ff4d4f;
+            --purple: #845ef7;
+        }
+
+        /* =========================
+           공통
+        ========================= */
+
+        .container {
+            width: min(1180px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        section {
+            padding: 105px 0;
+            scroll-margin-top: 78px;
+        }
+
+        .section-soft {
+            background: #f6f9fd;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(30px, 4vw, 43px);
+            line-height: 1.25;
+            letter-spacing: -1.5px;
+            margin-bottom: 10px;
+        }
+
+        .section-desc {
+            text-align: center;
+            color: var(--muted);
+            font-size: 16px;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-weight: 800;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            color: white;
+            background: linear-gradient(135deg, #2767e8, #06a4c6);
+            box-shadow: 0 8px 20px rgba(36, 110, 233, .18);
+        }
+
+        .btn-outline {
+            color: var(--blue);
+            background: white;
+            border: 2px solid var(--blue);
+        }
+
+        /* =========================
+           NAV
+        ========================= */
+
+        header {
+            height: 72px;
+            background: rgba(255,255,255,.96);
+            border-bottom: 1px solid #e6edf5;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(12px);
+        }
+
+        .nav {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 21px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #2767e8, #06a4c6);
+            color: white;
+        }
+
+        .logo strong {
+            color: var(--blue);
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #516078;
+        }
+
+        .nav-menu a:hover {
+            color: var(--blue);
+        }
+
+        .nav-cta {
+            color: white;
+            padding: 10px 18px;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2767e8, #0aa3c4);
+            white-space: nowrap;
+        }
+
+        /* =========================
+           HERO
+        ========================= */
+
+        .hero {
+            min-height: 690px;
+            padding: 70px 0;
+            background:
+                radial-gradient(circle at 95% 10%, rgba(69,139,255,.20), transparent 27%),
+                radial-gradient(circle at 0% 95%, rgba(8,174,212,.16), transparent 25%),
+                linear-gradient(135deg, #eef6ff, #f4ffff);
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 70px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 15px;
+            border-radius: 30px;
+            color: #285ac6;
+            background: #dcecff;
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: #4d83ff;
+            border-radius: 50%;
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 5.5vw, 68px);
+            line-height: 1.14;
+            letter-spacing: -3px;
+            margin-bottom: 25px;
+        }
+
+        .gradient-text {
+            color: transparent;
+            background: linear-gradient(90deg, #286de5, #02a0bd);
+            background-clip: text;
+            -webkit-background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: #596a84;
+            margin-bottom: 30px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .type-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 5px 12px;
+            background: #dfebff;
+            border-radius: 30px;
+            color: #2755b2;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .hero-visual {
+            position: relative;
+            min-height: 370px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .travel-card {
+            width: min(440px, 100%);
+            background: rgba(255,255,255,.95);
+            border-radius: 25px;
+            padding: 32px;
+            box-shadow: 0 25px 50px rgba(20,52,91,.16);
+        }
+
+        .travel-title {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .travel-icon {
+            width: 45px;
+            height: 45px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: #edf5ff;
+            font-size: 23px;
+        }
+
+        .world-panel {
+            background: #173477;
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .world-panel small {
+            color: #75c8ff;
+            font-weight: 800;
+        }
+
+        .world-types {
+            display: grid;
+            grid-template-columns: repeat(5,1fr);
+            gap: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .world-type span {
+            width: 35px;
+            height: 35px;
+            margin: auto;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 900;
+        }
+
+        .world-type p {
+            font-size: 11px;
+            margin-top: 5px;
+            color: #a9b9dc;
+        }
+
+        .float-card {
+            position: absolute;
+            background: white;
+            padding: 13px 16px;
+            border-radius: 13px;
+            box-shadow: 0 12px 25px rgba(0,0,0,.12);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .float-1 {
+            left: 0;
+            top: 40px;
+        }
+
+        .float-2 {
+            left: 0;
+            bottom: 20px;
+        }
+
+        .float-3 {
+            right: -5px;
+            bottom: 25px;
+        }
+
+        /* =========================
+           AI
+        ========================= */
+
+        .ai-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .ai-card {
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 30px;
+            background: #f8fafd;
+            min-height: 490px;
+        }
+
+        .ai-card h3 {
+            margin-bottom: 20px;
+        }
+
+        .upload-box {
+            height: 310px;
+            border: 2px dashed #c9d7e8;
+            border-radius: 17px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            text-align: center;
+        }
+
+        .upload-placeholder {
+            padding: 20px;
+        }
+
+        .camera {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            border-radius: 15px;
+            background: #f0f4fa;
+            display: grid;
+            place-items: center;
+            font-size: 27px;
+        }
+
+        .upload-placeholder p {
+            font-weight: 800;
+        }
+
+        .upload-placeholder small {
+            display: block;
+            color: #94a2b8;
+            margin-top: 5px;
+        }
+
+        #previewImage {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            background: #fff;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-buttons {
+            margin-top: 15px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .select-btn {
+            width: 100%;
+            padding: 11px;
+            border-radius: 12px;
+            border: 2px solid var(--blue);
+            background: white;
+            color: var(--blue);
+            font-weight: 800;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            background: linear-gradient(135deg, #2767e8, #08a2c3);
+            font-weight: 900;
+        }
+
+        .analyze-btn:disabled {
+            background: #c8d3e2;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .result-empty {
+            height: 425px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #93a2bb;
+            text-align: center;
+        }
+
+        .result-empty .robot {
+            font-size: 45px;
+            margin-bottom: 12px;
+        }
+
+        .result-content {
+            display: none;
+        }
+
+        .result-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .result-type {
+            font-size: 42px;
+            margin: 3px 0;
+            color: var(--blue);
+        }
+
+        .score-label {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #e7f1ff;
+            color: #2767e8;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        .prediction-row {
+            margin-bottom: 11px;
+        }
+
+        .prediction-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .prediction-bar {
+            height: 8px;
+            border-radius: 10px;
+            background: #e4ebf4;
+            overflow: hidden;
+        }
+
+        .prediction-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg,#286be8,#06a5c6);
+        }
+
+        .result-guide {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 17px;
+            margin-top: 20px;
+        }
+
+        .result-guide-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .mini-info {
+            background: #f5f8fc;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .mini-info small {
+            display: block;
+            color: #8b99ad;
+        }
+
+        /* =========================
+           TYPE CARDS
+        ========================= */
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+        }
+
+        .type-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 18px;
+            text-align: center;
+            box-shadow: 0 7px 15px rgba(29,55,92,.04);
+            transition: .25s;
+        }
+
+        .type-card:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 16px 30px rgba(29,55,92,.10);
+        }
+
+        .socket-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 15px;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .type-card h3 {
+            margin-bottom: 3px;
+        }
+
+        .type-card p {
+            font-size: 13px;
+            color: #586982;
+        }
+
+        .type-card .country {
+            margin-top: 6px;
+            color: #9aa5b6;
+        }
+
+        .type-card button {
+            margin-top: 20px;
+            border: none;
+            background: none;
+            color: #8190a7;
+            font-weight: 700;
+        }
+
+        .a-color { color:#286ee9; background:#e9f1ff; }
+        .c-color { color:#08a2bd; background:#e4fbff; }
+        .f-color { color:#8452f3; background:#f1eaff; }
+        .g-color { color:#f04444; background:#ffeded; }
+        .i-color { color:#00a575; background:#e2faf1; }
+
+        /* =========================
+           COUNTRY
+        ========================= */
+
+        .country-search {
+            max-width: 520px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .country-search input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 20px 16px 48px;
+            outline: none;
+            background: #f8fafd;
+        }
+
+        .country-search span {
+            position: absolute;
+            left: 18px;
+            top: 14px;
+        }
+
+        .country-buttons {
+            display: grid;
+            grid-template-columns: repeat(8,1fr);
+            gap: 12px;
+        }
+
+        .country-btn {
+            padding: 16px 5px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: white;
+            color: var(--navy);
+            font-weight: 800;
+        }
+
+        .country-btn small {
+            display: block;
+            font-weight: 700;
+        }
+
+        .country-btn:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .country-result {
+            display: none;
+            max-width: 760px;
+            margin: 28px auto 0;
+            border: 1px solid #cfe0f5;
+            border-radius: 17px;
+            background: #f8fbff;
+            padding: 25px;
+        }
+
+        .country-result h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .country-result-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 12px;
+        }
+
+        /* =========================
+           ADAPTER
+        ========================= */
+
+        .adapter-layout {
+            display: grid;
+            grid-template-columns: 1fr 200px 1fr;
+            align-items: center;
+            gap: 35px;
+        }
+
+        .adapter-column {
+            display: grid;
+            gap: 16px;
+        }
+
+        .info-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 17px;
+            padding: 22px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .info-card-icon {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            background: #eef5ff;
+            font-size: 22px;
+        }
+
+        .info-card p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .adapter-center {
+            height: 150px;
+            border-radius: 30px;
+            background: linear-gradient(145deg,#102f70,#2e68df);
+            color: white;
+            display: grid;
+            place-items: center;
+            font-size: 55px;
+            box-shadow: 0 20px 35px rgba(24,65,139,.2);
+        }
+
+        /* =========================
+           VOLTAGE
+        ========================= */
+
+        .voltage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .voltage-card {
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .plug-card {
+            background: #eaf3ff;
+            border: 1px solid #9bc5ff;
+        }
+
+        .volt-card {
+            background: #fff8df;
+            border: 1px solid #ffd56a;
+        }
+
+        .voltage-card .big-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .voltage-card p {
+            margin-top: 6px;
+            color: #52647d;
+        }
+
+        .charger-box {
+            border: 1px solid var(--border);
+            background: #f8fafd;
+            border-radius: 20px;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .charger-text ul {
+            margin-top: 15px;
+            list-style: none;
+        }
+
+        .charger-text li {
+            margin-top: 7px;
+        }
+
+        .charger-label {
+            background: #0d2149;
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            font-family: monospace;
+        }
+
+        .charger-label div {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+
+        .good {
+            color: #44e1b1;
+        }
+
+        .warning-box {
+            grid-column: 1 / -1;
+            padding: 13px 18px;
+            border-radius: 10px;
+            background: #fff3c4;
+            color: #805a00;
+            font-size: 13px;
+        }
+
+        /* =========================
+           STEPS
+        ========================= */
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 20px;
+        }
+
+        .step {
+            position: relative;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+        }
+
+        .step-number {
+            color: var(--blue);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .step-icon {
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: #eaf5ff;
+            margin: 15px auto;
+            font-size: 27px;
+        }
+
+        .step p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* =========================
+           ABOUT
+        ========================= */
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 70px;
+            align-items: center;
+        }
+
+        .about-grid h2 {
+            font-size: 42px;
+            line-height: 1.2;
+            margin-bottom: 25px;
+        }
+
+        .about-grid p {
+            color: #65758c;
+            margin-top: 15px;
+        }
+
+        .about-values {
+            display: grid;
+            gap: 15px;
+        }
+
+        /* =========================
+           NOTICE
+        ========================= */
+
+        .notice {
+            max-width: 850px;
+            margin: auto;
+            background: white;
+            border: 1px solid #9cc8ff;
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .notice h3 {
+            margin-bottom: 15px;
+        }
+
+        .notice p {
+            color: #586982;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .notice strong {
+            color: var(--blue);
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+            background: #0d2149;
+            color: white;
+            padding: 55px 0 30px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        footer p,
+        footer a {
+            color: #91a4c3;
+            font-size: 14px;
+        }
+
+        .footer-links {
+            display: grid;
+            gap: 10px;
+        }
+
+        .copyright {
+            border-top: 1px solid #22365c;
+            margin-top: 40px;
+            padding-top: 20px;
+            color: #667c9f;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media(max-width: 1050px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .hero-grid,
+            .ai-grid,
+            .about-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-visual {
+                margin-top: 30px;
+            }
+
+            .type-grid {
+                grid-template-columns: repeat(3,1fr);
+            }
+
+            .country-buttons {
+                grid-template-columns: repeat(4,1fr);
+            }
+        }
+
+        @media(max-width: 760px) {
+            .nav-cta {
+                display: none;
+            }
+
+            section {
+                padding: 75px 0;
+            }
+
+            .hero {
+                padding-top: 50px;
+            }
+
+            .hero h1 {
+                font-size: 45px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .float-card {
+                display: none;
+            }
+
+            .type-grid,
+            .steps {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .adapter-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .adapter-center {
+                order: -1;
+            }
+
+            .voltage-grid,
+            .charger-box,
+            .country-result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .country-buttons {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .copyright {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        @media(max-width: 480px) {
+            .container {
+                width: min(100% - 25px, 1180px);
+            }
+
+            .type-grid,
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 39px;
+            }
+
+            .ai-card {
+                padding: 18px;
+            }
+
+            .world-types {
+                gap: 5px;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="container nav">
+
+        <a class="logo" href="#home">
+            <span class="logo-icon">🔌</span>
+            <span>PlugMate <strong>AI</strong></span>
+        </a>
+
+        <nav class="nav-menu">
+            <a href="#ai">AI 콘센트 분류</a>
+            <a href="#types">플러그 타입 가이드</a>
+            <a href="#countries">국가별 확인</a>
+            <a href="#adapter">어댑터 가이드</a>
+            <a href="#voltage">전압 확인</a>
+            <a href="#how">사용 방법</a>
+            <a href="#about">프로젝트 소개</a>
+        </nav>
+
+        <a href="#ai" class="nav-cta">
+            AI로 콘센트 확인하기
+        </a>
+
+    </div>
+</header>
+
+
+<!-- HERO -->
+<section class="hero" id="home">
+
+    <div class="container hero-grid">
+
+        <div>
+
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Teachable Machine 기반 AI 여행 도우미
+            </div>
+
+            <h1>
+                해외 콘센트,<br>
+                <span class="gradient-text">사진 한 장으로</span><br>
+                확인하세요.
+            </h1>
+
+            <p class="hero-description">
+                여행지 콘센트 사진을 업로드하면<br>
+                AI가 플러그 타입을 분류하고<br>
+                여행에 필요한 어댑터와 전압 확인 정보를 안내합니다.
+            </p>
+
+            <div class="hero-buttons">
+
+                <a href="#ai" class="btn btn-primary">
+                    📷 콘센트 사진 분석하기
+                </a>
+
+                <a href="#types" class="btn btn-outline">
+                    플러그 타입 알아보기
+                </a>
+
+            </div>
+
+            <div class="type-pills">
+                <span class="pill">Type A</span>
+                <span class="pill">Type C</span>
+                <span class="pill">Type F</span>
+                <span class="pill">Type G</span>
+                <span class="pill">Type I</span>
+            </div>
+
+        </div>
+
+        <div class="hero-visual">
+
+            <div class="travel-card">
+
+                <div class="travel-title">
+                    <div class="travel-icon">✈️</div>
+
+                    <div>
+                        <strong>해외여행 출발 전</strong>
+                        <p style="color:#8997ab;font-size:13px;">
+                            콘센트 타입을 미리 확인하세요
+                        </p>
+                    </div>
+                </div>
+
+                <div class="world-panel">
+
+                    <small>세계 플러그 현황</small>
+
+                    <div class="world-types">
+
+                        <div class="world-type">
+                            <span style="background:#3f82ed;">A</span>
+                            <p>북미</p>
+                        </div>
+
+                        <div class="world-type">
+                            <span style="background:#04a5c5;">C</span>
+                            <p>유럽</p>
+                        </div>
+
+                        <div class="world-type">
+                            <span style="background:#8452f3;">F</span>
+                            <p>유럽</p>
+                        </div>
+
+                        <div class="world-type">
+                            <span style="background:#f04444;">G</span>
+                            <p>영국</p>
+                        </div>
+
+                        <div class="world-type">
+                            <span style="background:#00ae7b;">I</span>
+                            <p>호주</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="float-card float-1">
+                🌎 해외여행 준비
+            </div>
+
+            <div class="float-card float-2">
+                🔌 5가지 플러그 타입
+            </div>
+
+            <div class="float-card float-3">
+                ⚡ 전압도 함께 확인
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- AI 분석 -->
+<section id="ai">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            AI로 콘센트 타입 확인하기
+        </h2>
+
+        <p class="section-desc">
+            여행지에서 촬영한 콘센트 사진을 선택해주세요.
+        </p>
+
+        <div class="ai-grid">
+
+            <!-- 업로드 -->
+            <div class="ai-card">
+
+                <h3>콘센트 사진 업로드</h3>
+
+                <div class="upload-box" id="dropZone">
+
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+
+                        <div class="camera">📷</div>
+
+                        <p>콘센트 사진을 여기에 올려주세요</p>
+
+                        <small>JPG, PNG 이미지 지원</small>
+                        <small>드래그 앤 드롭 또는 클릭</small>
+
+                    </div>
+
+                    <img id="previewImage" alt="선택한 콘센트 사진">
+
+                </div>
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept="image/png,image/jpeg,image/webp"
+                >
+
+                <div class="upload-buttons">
+
+                    <button class="select-btn" id="selectBtn">
+                        사진 선택하기
+                    </button>
+
+                    <button
+                        class="analyze-btn"
+                        id="analyzeBtn"
+                        disabled
+                    >
+                        AI 분석 시작
+                    </button>
+
+                </div>
+
+                <div class="status" id="modelStatus">
+                    AI 모델을 불러오는 중입니다...
+                </div>
+
+            </div>
+
+
+            <!-- 결과 -->
+            <div class="ai-card">
+
+                <div class="result-empty" id="resultEmpty">
+
+                    <div class="robot">🤖</div>
+
+                    <strong>
+                        사진을 업로드하고<br>
+                        AI 분석을 시작해주세요
+                    </strong>
+
+                </div>
+
+
+                <div class="result-content" id="resultContent">
+
+                    <div class="result-label">
+                        AI 분석 결과
+                    </div>
+
+                    <h3 class="result-type" id="resultType">
+                        Type G
+                    </h3>
+
+                    <div class="score-label" id="resultScore">
+                        예측 점수 0%
+                    </div>
+
+                    <div id="predictionBars"></div>
+
+                    <div class="result-guide">
+
+                        <strong id="guideTitle">
+                            플러그 타입 안내
+                        </strong>
+
+                        <div class="result-guide-grid">
+
+                            <div class="mini-info">
+                                <small>대표 사용 국가 예시</small>
+                                <strong id="guideCountries">-</strong>
+                            </div>
+
+                            <div class="mini-info">
+                                <small>한국 여행객 기준</small>
+                                <strong id="guideAdapter">-</strong>
+                            </div>
+
+                        </div>
+
+                        <p
+                            id="guideNotice"
+                            style="margin-top:12px;color:#70809b;font-size:13px;"
+                        ></p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 타입 -->
+<section class="section-soft" id="types">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            세계의 플러그 타입을 알아보세요
+        </h2>
+
+        <p class="section-desc">
+            국가마다 사용하는 콘센트 규격이 다를 수 있습니다.
+        </p>
+
+        <div class="type-grid">
+
+            <article class="type-card">
+                <div class="socket-icon a-color">Ⅱ</div>
+                <h3 class="a-color" style="background:none;">Type A</h3>
+                <p>평평한 핀 2개</p>
+                <p class="country">미국 · 일본 · 캐나다</p>
+                <button onclick="showTypeInfo('Type A')">자세히 보기 →</button>
+            </article>
+
+            <article class="type-card">
+                <div class="socket-icon c-color">● ●</div>
+                <h3 class="c-color" style="background:none;">Type C</h3>
+                <p>둥근 핀 2개</p>
+                <p class="country">유럽 여러 지역</p>
+                <button onclick="showTypeInfo('Type C')">자세히 보기 →</button>
+            </article>
+
+            <article class="type-card">
+                <div class="socket-icon f-color">● ●</div>
+                <h3 class="f-color" style="background:none;">Type F</h3>
+                <p>둥근 핀 2개 + 접지 구조</p>
+                <p class="country">한국 · 독일 · 스페인 등</p>
+                <button onclick="showTypeInfo('Type F')">자세히 보기 →</button>
+            </article>
+
+            <article class="type-card">
+                <div class="socket-icon g-color">∴</div>
+                <h3 class="g-color" style="background:none;">Type G</h3>
+                <p>직사각형 핀 3개</p>
+                <p class="country">영국 · 홍콩 · 싱가포르</p>
+                <button onclick="showTypeInfo('Type G')">자세히 보기 →</button>
+            </article>
+
+            <article class="type-card">
+                <div class="socket-icon i-color">Ⅴ</div>
+                <h3 class="i-color" style="background:none;">Type I</h3>
+                <p>비스듬한 평핀 형태</p>
+                <p class="country">호주 · 뉴질랜드</p>
+                <button onclick="showTypeInfo('Type I')">자세히 보기 →</button>
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 국가 -->
+<section id="countries">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            여행 전에 목적지 규격을 확인하세요
+        </h2>
+
+        <p class="section-desc">
+            인기 여행지의 대표적인 콘센트 타입과 전압 정보를 확인할 수 있습니다.
+        </p>
+
+        <div class="country-search">
+
+            <span>🔍</span>
+
+            <input
+                id="countrySearch"
+                type="text"
+                placeholder="여행 국가를 검색하세요"
+            >
+
+        </div>
+
+        <div class="country-buttons" id="countryButtons"></div>
+
+        <div class="country-result" id="countryResult">
+
+            <h3 id="countryTitle"></h3>
+
+            <div class="country-result-grid">
+
+                <div class="mini-info">
+                    <small>대표 플러그 타입</small>
+                    <strong id="countryPlug"></strong>
+                </div>
+
+                <div class="mini-info">
+                    <small>대표 전압</small>
+                    <strong id="countryVoltage"></strong>
+                </div>
+
+                <div class="mini-info">
+                    <small>여행 전 확인</small>
+                    <strong id="countryAdapter"></strong>
+                </div>
+
+            </div>
+
+            <p style="color:#7d8ba0;font-size:13px;margin-top:15px;">
+                ※ 국가 내에서도 시설이나 지역에 따라 콘센트 규격이 다를 수 있습니다.
+                실제 여행 전 숙박시설 및 공식 정보를 함께 확인해주세요.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 어댑터 -->
+<section class="section-soft" id="adapter">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            어떤 여행용 어댑터가 필요할까요?
+        </h2>
+
+        <p class="section-desc">
+            여행 목적지에 맞는 어댑터를 선택하는 방법을 알아보세요.
+        </p>
+
+        <div class="adapter-layout">
+
+            <div class="adapter-column">
+
+                <div class="info-card">
+                    <div class="info-card-icon">🔌</div>
+                    <div>
+                        <strong>플러그 모양 확인</strong>
+                        <p>방문 국가에서 사용하는 콘센트 타입을 먼저 확인하세요.</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-icon">🔄</div>
+                    <div>
+                        <strong>변환 어댑터</strong>
+                        <p>플러그 형태가 다르면 적절한 변환 어댑터가 필요할 수 있습니다.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="adapter-center">
+                🔌
+            </div>
+
+            <div class="adapter-column">
+
+                <div class="info-card">
+                    <div class="info-card-icon">🌎</div>
+                    <div>
+                        <strong>멀티 어댑터</strong>
+                        <p>여러 국가를 여행한다면 다양한 타입을 지원하는 제품을 확인하세요.</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-icon">⚠️</div>
+                    <div>
+                        <strong>주의사항</strong>
+                        <p>플러그 변환 어댑터와 전압 변환 장치는 같은 기능이 아닐 수 있습니다.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 전압 -->
+<section id="voltage">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            플러그가 맞아도 전압은 따로 확인해야 해요
+        </h2>
+
+        <p class="section-desc">
+            플러그 호환과 전압 호환은 별개의 문제입니다.
+        </p>
+
+        <div class="voltage-grid">
+
+            <div class="voltage-card plug-card">
+
+                <div class="big-icon">🔌</div>
+
+                <h3>플러그 호환</h3>
+
+                <strong>콘센트에 연결 가능한가?</strong>
+
+                <p>
+                    플러그의 물리적인 모양과 현지 콘센트 타입을 확인합니다.
+                    형태가 다르면 적절한 어댑터가 필요할 수 있습니다.
+                </p>
+
+            </div>
+
+            <div class="voltage-card volt-card">
+
+                <div class="big-icon">⚡</div>
+
+                <h3>전압 호환</h3>
+
+                <strong>내 전자기기가 현지 전압을 지원하는가?</strong>
+
+                <p>
+                    사용하려는 전자제품이나 충전기에 표시된
+                    입력 전압 범위를 반드시 확인하세요.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="charger-box">
+
+            <div class="charger-text">
+
+                <h3>충전기 라벨에서 확인하세요</h3>
+
+                <p style="color:#6f8098;margin-top:7px;">
+                    전자제품 충전기나 어댑터의 INPUT 항목에서
+                    지원하는 입력 전압 범위를 확인할 수 있습니다.
+                </p>
+
+                <ul>
+                    <li>🟢 INPUT: 100-240V → 넓은 입력 전압 범위의 예시</li>
+                    <li>🔴 제한된 입력 범위 → 방문 국가 전압과 별도 비교 필요</li>
+                </ul>
+
+            </div>
+
+            <div class="charger-label">
+
+                <small>충전기 라벨 예시</small>
+
+                <div>
+                    <span>INPUT:</span>
+                    <strong class="good">100-240V ~ 50/60Hz</strong>
+                </div>
+
+                <div>
+                    <span>OUTPUT:</span>
+                    <strong>5V === 2A</strong>
+                </div>
+
+            </div>
+
+            <div class="warning-box">
+                ⚠️ <strong>중요:</strong>
+                플러그 타입과 전압 호환 여부는 서로 다른 문제입니다.
+                여행 전 사용하는 전자제품의 입력 전압과 방문 국가의 전기 규격을 확인해주세요.
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 사용 방법 -->
+<section class="section-soft" id="how">
+
+    <div class="container">
+
+        <h2 class="section-title">
+            PlugMate AI 사용 방법
+        </h2>
+
+        <p class="section-desc">
+            4단계로 간단하게 사용할 수 있습니다.
+        </p>
+
+        <div class="steps">
+
+            <div class="step">
+                <div class="step-number">STEP 01</div>
+                <div class="step-icon">📷</div>
+                <h3>콘센트 촬영</h3>
+                <p>여행지의 콘센트가 잘 보이도록 촬영합니다.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">STEP 02</div>
+                <div class="step-icon">📤</div>
+                <h3>사진 선택</h3>
+                <p>촬영한 사진을 웹사이트에서 선택합니다.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">STEP 03</div>
+                <div class="step-icon">🤖</div>
+                <h3>AI 분석</h3>
+                <p>Teachable Machine 모델이 콘센트 형태를 분석합니다.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">STEP 04</div>
+                <div class="step-icon">🌎</div>
+                <h3>여행 정보 확인</h3>
+                <p>예측된 플러그 타입과 관련 여행 정보를 확인합니다.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- 소개 -->
+<section id="about">
+
+    <div class="container about-grid">
+
+        <div>
+
+            <h2>
+                왜 PlugMate AI를<br>
+                만들었나요?
+            </h2>
+
+            <p>
+                해외여행을 준비할 때 국가마다 다른 콘센트와 플러그 규격 때문에
+                어떤 어댑터를 준비해야 하는지 다시 검색해야 하는 불편이 있습니다.
+            </p>
+
+            <p>
+                PlugMate AI는 여행지 콘센트 사진을 기반으로 플러그 타입을 쉽게 확인하고,
+                관련 여행 정보를 한 화면에서 탐색할 수 있도록 돕는
+                AI 기반 여행 보조 서비스입니다.
+            </p>
+
+        </div>
+
+        <div class="about-values">
+
+            <div class="info-card">
+                <div class="info-card-icon">📷</div>
+                <div>
+                    <strong>사진 한 장으로 간편하게</strong>
+                    <p>복잡한 검색 없이 사진으로 콘센트 타입을 확인합니다.</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-icon">🌎</div>
+                <div>
+                    <strong>여행 준비 정보 한눈에</strong>
+                    <p>플러그 타입, 어댑터, 전압 관련 정보를 함께 확인합니다.</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-icon">🔌</div>
+                <div>
+                    <strong>복잡한 플러그 타입 쉽게 확인</strong>
+                    <p>5가지 플러그 타입을 시각적으로 쉽게 확인할 수 있습니다.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- AI 한계 -->
+<section class="section-soft">
+
+    <div class="container">
+
+        <div class="notice">
+
+            <h3>
+                ℹ️ AI 분석 결과를 이용하기 전에 확인해주세요
+            </h3>
+
+            <p>
+                AI 결과는 사진의 형태를 기반으로 한 분류 결과입니다.
+                사진 각도, 조명, 콘센트 디자인 등에 따라 잘못 분류될 수 있습니다.
+            </p>
+
+            <p>
+                표시되는 퍼센트는 해당 사진에 대한 AI의
+                <strong>예측 점수</strong>이며,
+                모델 전체의 정확도를 의미하지 않습니다.
+            </p>
+
+            <p>
+                국가별 플러그 타입과 전기 규격은 시설이나 지역 등에 따라
+                달라질 수 있으므로 실제 여행 전에는 숙박시설, 제조사 또는
+                관련 공식 정보를 함께 확인해주세요.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<footer>
+
+    <div class="container">
+
+        <div class="footer-grid">
+
+            <div>
+                <div class="logo">
+                    <span class="logo-icon">🔌</span>
+                    <span>PlugMate <strong>AI</strong></span>
+                </div>
+
+                <p style="margin-top:12px;">
+                    AI로 더 간편한 해외여행 준비
+                </p>
+            </div>
+
+            <div class="footer-links">
+                <a href="#ai">AI 콘센트 분류</a>
+                <a href="#adapter">어댑터 가이드</a>
+            </div>
+
+            <div class="footer-links">
+                <a href="#types">플러그 타입 가이드</a>
+                <a href="#voltage">전압 확인</a>
+            </div>
+
+            <div class="footer-links">
+                <a href="#countries">국가별 확인</a>
+                <a href="#about">프로젝트 소개</a>
+            </div>
+
+        </div>
+
+        <div class="copyright">
+
+            <span>
+                Teachable Machine 기반 이미지 분류 프로젝트
+            </span>
+
+            <span>
+                PlugMate AI
+            </span>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+<script>
+
+    /* =========================================================
+       1. TEACHABLE MACHINE
+    ========================================================= */
+
+    const MODEL_URL =
+        "https://teachablemachine.withgoogle.com/models/OHd0RmjF7/";
+
+    let model = null;
+    let imageReady = false;
+    let currentObjectURL = null;
+
+
+    const fileInput = document.getElementById("fileInput");
+    const selectBtn = document.getElementById("selectBtn");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+
+    const previewImage = document.getElementById("previewImage");
+    const uploadPlaceholder = document.getElementById("uploadPlaceholder");
+    const dropZone = document.getElementById("dropZone");
+
+    const modelStatus = document.getElementById("modelStatus");
+
+    const resultEmpty = document.getElementById("resultEmpty");
+    const resultContent = document.getElementById("resultContent");
+
+    const resultType = document.getElementById("resultType");
+    const resultScore = document.getElementById("resultScore");
+
+    const predictionBars = document.getElementById("predictionBars");
+
+    const guideCountries = document.getElementById("guideCountries");
+    const guideAdapter = document.getElementById("guideAdapter");
+    const guideNotice = document.getElementById("guideNotice");
+
+
+    /* =========================================================
+       2. 타입별 안내
+    ========================================================= */
+
+    const typeGuide = {
+
+        "Type A": {
+            countries: "미국 · 일본 · 캐나다 등",
+            adapter: "변환 어댑터 확인 권장",
+            notice:
+                "평평한 핀을 사용하는 타입입니다. 방문 국가와 사용 기기의 전압도 별도로 확인해주세요."
+        },
+
+        "Type C": {
+            countries: "유럽 여러 지역 등",
+            adapter: "플러그 규격 확인 필요",
+            notice:
+                "둥근 핀 2개 형태입니다. Type F 등 유사한 형태가 있으므로 실제 콘센트 구조를 함께 확인해주세요."
+        },
+
+        "Type F": {
+            countries: "한국 · 독일 · 스페인 등",
+            adapter: "호환 규격 확인",
+            notice:
+                "둥근 핀과 접지 구조를 갖는 형태입니다. 시설별 콘센트 규격을 확인해주세요."
+        },
+
+        "Type G": {
+            countries: "영국 · 홍콩 · 싱가포르 등",
+            adapter: "변환 어댑터 확인 권장",
+            notice:
+                "직사각형 핀 3개 형태입니다. 한국에서 가져간 플러그와 직접 호환되는지 여행 전에 확인해주세요."
+        },
+
+        "Type I": {
+            countries: "호주 · 뉴질랜드 등",
+            adapter: "변환 어댑터 확인 권장",
+            notice:
+                "비스듬한 평핀 형태가 특징입니다. 방문 국가의 실제 콘센트와 전압을 함께 확인해주세요."
+        }
+
+    };
+
+
+    /* =========================================================
+       3. 모델 로딩
+    ========================================================= */
+
+    async function loadModel() {
+
+        try {
+
+            modelStatus.textContent =
+                "AI 모델을 불러오는 중입니다...";
+
+            model = await tmImage.load(
+                MODEL_URL + "model.json",
+                MODEL_URL + "metadata.json"
+            );
+
+            modelStatus.textContent =
+                "AI 모델 준비 완료 · 콘센트 사진을 선택해주세요.";
+
+            updateAnalyzeButton();
+
+        } catch (error) {
+
+            console.error(error);
+
+            modelStatus.textContent =
+                "AI 모델을 불러오지 못했습니다. 인터넷 연결 또는 모델 주소를 확인해주세요.";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       4. 사진 선택
+    ========================================================= */
+
+    selectBtn.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+
+    dropZone.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+
+    fileInput.addEventListener("change", (event) => {
+
+        const file = event.target.files[0];
+
+        if (file) {
+            showSelectedImage(file);
+        }
+
+    });
+
+
+    function showSelectedImage(file) {
+
+        if (!file.type.startsWith("image/")) {
+            alert("이미지 파일을 선택해주세요.");
+            return;
+        }
+
+        if (currentObjectURL) {
+            URL.revokeObjectURL(currentObjectURL);
+        }
+
+        currentObjectURL = URL.createObjectURL(file);
+
+        previewImage.onload = () => {
+
+            imageReady = true;
+
+            modelStatus.textContent =
+                model
+                ? "사진 준비 완료 · AI 분석을 시작할 수 있습니다."
+                : "사진 준비 완료 · AI 모델을 불러오는 중입니다.";
+
+            updateAnalyzeButton();
+
+        };
+
+        previewImage.src = currentObjectURL;
+
+        uploadPlaceholder.style.display = "none";
+        previewImage.style.display = "block";
+
+        resultContent.style.display = "none";
+        resultEmpty.style.display = "flex";
+
+    }
+
+
+    function updateAnalyzeButton() {
+
+        analyzeBtn.disabled = !(model && imageReady);
+
+    }
+
+
+    /* =========================================================
+       5. 드래그 앤 드롭
+    ========================================================= */
+
+    ["dragenter", "dragover"].forEach(eventName => {
+
+        dropZone.addEventListener(eventName, event => {
+
+            event.preventDefault();
+
+            dropZone.style.borderColor = "#246ee9";
+            dropZone.style.background = "#f5f9ff";
+
+        });
+
+    });
+
+
+    ["dragleave", "drop"].forEach(eventName => {
+
+        dropZone.addEventListener(eventName, event => {
+
+            event.preventDefault();
+
+            dropZone.style.borderColor = "#c9d7e8";
+            dropZone.style.background = "#ffffff";
+
+        });
+
+    });
+
+
+    dropZone.addEventListener("drop", event => {
+
+        const file = event.dataTransfer.files[0];
+
+        if (file) {
+            showSelectedImage(file);
+        }
+
+    });
+
+
+    /* =========================================================
+       6. AI 분석
+    ========================================================= */
+
+    analyzeBtn.addEventListener("click", predict);
+
+
+    async function predict() {
+
+        if (!model || !imageReady) {
+            return;
+        }
+
+        try {
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = "AI 분석 중...";
+
+            modelStatus.textContent =
+                "AI가 콘센트 사진을 분석하고 있습니다...";
+
+            const predictions =
+                await model.predict(previewImage);
+
+            predictions.sort(
+                (a, b) => b.probability - a.probability
+            );
+
+            const topPrediction = predictions[0];
+
+            showPrediction(predictions, topPrediction);
+
+            modelStatus.textContent =
+                "AI 분석이 완료되었습니다.";
+
+        } catch (error) {
+
+            console.error(error);
+
+            modelStatus.textContent =
+                "분석 중 오류가 발생했습니다. 다른 사진으로 다시 시도해주세요.";
+
+        } finally {
+
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = "AI 분석 시작";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       7. 결과 출력
+    ========================================================= */
+
+    function showPrediction(predictions, topPrediction) {
+
+        resultEmpty.style.display = "none";
+        resultContent.style.display = "block";
+
+        const score =
+            (topPrediction.probability * 100).toFixed(1);
+
+        resultType.textContent =
+            topPrediction.className;
+
+        resultScore.textContent =
+            "예측 점수 " + score + "%";
+
+        predictionBars.innerHTML = "";
+
+
+        predictions.forEach(item => {
+
+            const percent =
+                (item.probability * 100).toFixed(1);
+
+            const row =
+                document.createElement("div");
+
+            row.className = "prediction-row";
+
+            row.innerHTML = `
+                <div class="prediction-top">
+                    <span>${item.className}</span>
+                    <span>${percent}%</span>
+                </div>
+
+                <div class="prediction-bar">
+                    <div
+                        class="prediction-fill"
+                        style="width:${percent}%"
+                    ></div>
+                </div>
+            `;
+
+            predictionBars.appendChild(row);
+
+        });
+
+
+        const guide =
+            typeGuide[topPrediction.className];
+
+
+        if (topPrediction.probability < 0.80) {
+
+            resultType.textContent =
+                "판단 보류";
+
+            guideCountries.textContent =
+                "사진 재촬영 권장";
+
+            guideAdapter.textContent =
+                "타입 확인 필요";
+
+            guideNotice.textContent =
+                "가장 높은 예측 점수가 80% 미만입니다. 콘센트 전체가 잘 보이도록 다른 각도나 밝은 환경에서 촬영한 사진으로 다시 분석해주세요.";
+
+            return;
+
+        }
+
+
+        if (guide) {
+
+            guideCountries.textContent =
+                guide.countries;
+
+            guideAdapter.textContent =
+                guide.adapter;
+
+            guideNotice.textContent =
+                guide.notice;
+
+        } else {
+
+            guideCountries.textContent =
+                "정보 확인 필요";
+
+            guideAdapter.textContent =
+                "규격 확인 필요";
+
+            guideNotice.textContent =
+                "AI 클래스 이름과 웹사이트의 안내 데이터가 일치하는지 확인해주세요.";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       8. 플러그 자세히 보기
+    ========================================================= */
+
+    function showTypeInfo(type) {
+
+        const guide = typeGuide[type];
+
+        if (!guide) return;
+
+        alert(
+            type + "\n\n" +
+            "대표 사용 국가 예시\n" +
+            guide.countries + "\n\n" +
+            "어댑터 안내\n" +
+            guide.adapter + "\n\n" +
+            guide.notice
+        );
+
+    }
+
+
+    /* =========================================================
+       9. 국가별 정보
+       대표적인 여행 준비 참고 정보
+    ========================================================= */
+
+    const countries = [
+
+        {
+            code: "US",
+            name: "미국",
+            plug: "Type A / B",
+            voltage: "120V",
+            adapter: "플러그 및 기기 입력 전압 확인"
+        },
+
+        {
+            code: "JP",
+            name: "일본",
+            plug: "Type A / B",
+            voltage: "100V",
+            adapter: "기기 입력 전압 확인"
+        },
+
+        {
+            code: "GB",
+            name: "영국",
+            plug: "Type G",
+            voltage: "230V",
+            adapter: "변환 어댑터 확인"
+        },
+
+        {
+            code: "FR",
+            name: "프랑스",
+            plug: "Type C / E",
+            voltage: "230V",
+            adapter: "플러그 규격 확인"
+        },
+
+        {
+            code: "AU",
+            name: "호주",
+            plug: "Type I",
+            voltage: "230V",
+            adapter: "변환 어댑터 확인"
+        },
+
+        {
+            code: "SG",
+            name: "싱가포르",
+            plug: "Type G",
+            voltage: "230V",
+            adapter: "변환 어댑터 확인"
+        },
+
+        {
+            code: "DE",
+            name: "독일",
+            plug: "Type C / F",
+            voltage: "230V",
+            adapter: "플러그 규격 확인"
+        },
+
+        {
+            code: "TH",
+            name: "태국",
+            plug: "여러 타입 사용",
+            voltage: "220V",
+            adapter: "숙박시설 규격 확인"
+        }
+
+    ];
+
+
+    const countryButtons =
+        document.getElementById("countryButtons");
+
+    const countrySearch =
+        document.getElementById("countrySearch");
+
+
+    function renderCountries(list) {
+
+        countryButtons.innerHTML = "";
+
+        list.forEach(country => {
+
+            const button =
+                document.createElement("button");
+
+            button.className =
+                "country-btn";
+
+            button.innerHTML =
+                `${country.code}<small>${country.name}</small>`;
+
+            button.addEventListener(
+                "click",
+                () => showCountry(country)
+            );
+
+            countryButtons.appendChild(button);
+
+        });
+
+    }
+
+
+    function showCountry(country) {
+
+        document.getElementById("countryResult")
+            .style.display = "block";
+
+        document.getElementById("countryTitle")
+            .textContent =
+            `${country.code} · ${country.name}`;
+
+        document.getElementById("countryPlug")
+            .textContent =
+            country.plug;
+
+        document.getElementById("countryVoltage")
+            .textContent =
+            country.voltage;
+
+        document.getElementById("countryAdapter")
+            .textContent =
+            country.adapter;
+
+    }
+
+
+    countrySearch.addEventListener("input", event => {
+
+        const keyword =
+            event.target.value
+                .trim()
+                .toLowerCase();
+
+        const filtered =
+            countries.filter(country =>
+
+                country.name
+                    .toLowerCase()
+                    .includes(keyword)
+
+                ||
+
+                country.code
+                    .toLowerCase()
+                    .includes(keyword)
+
+            );
+
+        renderCountries(filtered);
+
+    });
+
+
+    /* =========================================================
+       시작
+    ========================================================= */
+
+    renderCountries(countries);
+    loadModel();
+
+
+    window.addEventListener("beforeunload", () => {
+
+        if (currentObjectURL) {
+            URL.revokeObjectURL(currentObjectURL);
+        }
+
+    });
+
+</script>
+
+</body>
+</html>
